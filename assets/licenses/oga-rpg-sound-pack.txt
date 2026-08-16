@@ -1,0 +1,6 @@
+CC0 1.0 — RPG Sound Pack by artisticdude
+https://opengameart.org/content/rpg-sound-pack
+http://creativecommons.org/publicdomain/zero/1.0/
+
+授權未要求署名；本專案仍在 ATTRIBUTION.md 列出作者與來源。
+本 repo 收錄的 pickup／quaff／stairs 由原始 .wav 轉為 Ogg Vorbis，內容未改動。

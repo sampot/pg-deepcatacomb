@@ -1,1 +1,124 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b100d"><meta name="description" content="傳統 Roguelike"><title>深窟探險</title><link rel="stylesheet" href="./styles.css"></head><body><main><header><div><small>傳統 Roguelike</small><h1>深窟探險</h1></div><button id="sound" aria-pressed="true">♫ 音效</button></header><section id="lobby" class="panel hero"><div class="sigil">✦</div><p>一局 5–10 分鐘。系統會把戰績保存到你的場域 KV。</p><p>最佳紀錄 <strong id="best">0</strong></p><button id="start" class="primary">開始新局</button><a href="./ATTRIBUTION.md">製作與署名</a></section><section id="game" hidden><div id="hud" class="hud"></div><section id="board" class="board" aria-label="遊戲盤面"></section><p id="msg" class="msg" aria-live="polite"></p><div id="actions" class="actions"></div></section></main><script type="module" src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0a10" />
+    <meta name="description" content="六層程序地城的傳統回合制 Roguelike：一步一動、視野迷霧、飢餓與死亡。" />
+    <title>深窟探險</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="brand">
+          <small>傳統 Roguelike</small>
+          <h1>深窟探險</h1>
+        </div>
+        <button id="sound" class="ghost" aria-pressed="true">♫ 音效</button>
+      </header>
+
+      <section id="lobby" class="panel">
+        <p class="lead">深窟共六層。走到最底層的王座大廳，斬下<strong>骸骨王</strong>。</p>
+        <ul class="rules">
+          <li>你走一步，整座地城跟著動一步</li>
+          <li>火把只照亮七格；走過的路會留在記憶裡，但看不見裡面有什麼</li>
+          <li>走向怪物就是攻擊；踩過的武器、護甲、藥水、乾糧會自動收下</li>
+          <li>飢餓每回合下降，歸零就餓死；死了就從第一層重來</li>
+        </ul>
+        <p class="record">
+          最深 <strong id="best-depth">1</strong> 層 · 最高分 <strong id="best-score">0</strong> · 通關 <strong id="best-wins">0</strong> 次
+        </p>
+        <div class="lobby-actions">
+          <button id="start" class="primary">下到第一層</button>
+          <button id="resume" class="ghost" hidden>續探第 <span id="resume-depth">1</span> 層</button>
+        </div>
+        <a class="credits-link" href="./ATTRIBUTION.md">製作與署名</a>
+      </section>
+
+      <section id="game" hidden>
+        <div class="hud">
+          <div class="hud-row">
+            <span id="depth-badge" class="badge depth">第 1 層</span>
+            <span id="level-badge" class="badge">Lv 1</span>
+            <span id="score-badge" class="badge">0 分</span>
+          </div>
+          <div class="gauges">
+            <div class="gauge">
+              <span class="gauge-label">體力</span>
+              <div class="bar"><i id="hp-fill" class="hp"></i></div>
+              <span id="hp-num" class="nums">26/26</span>
+            </div>
+            <div class="gauge">
+              <span class="gauge-label">飢餓</span>
+              <div class="bar"><i id="hunger-fill" class="hunger"></i></div>
+              <span id="hunger-num" class="nums">420</span>
+            </div>
+          </div>
+          <div class="hud-row gear">
+            <span id="weapon-chip" class="chip">匕首</span>
+            <span id="armor-chip" class="chip">布衣</span>
+            <span id="exp-chip" class="chip">經驗 0/20</span>
+          </div>
+        </div>
+
+        <div class="board-wrap">
+          <canvas id="board" width="330" height="242" aria-label="地城視野"></canvas>
+        </div>
+
+        <p id="msg" class="msg" aria-live="polite">用方向鍵、點相鄰格或下方十字鍵走動。</p>
+
+        <div class="controls">
+          <div class="pad" role="group" aria-label="移動">
+            <button class="pad-btn" data-move="0,-1" aria-label="向上">▲</button>
+            <button class="pad-btn" data-move="-1,0" aria-label="向左">◀</button>
+            <button class="pad-btn wait" data-move="0,0" aria-label="原地等待">●</button>
+            <button class="pad-btn" data-move="1,0" aria-label="向右">▶</button>
+            <button class="pad-btn" data-move="0,1" aria-label="向下">▼</button>
+          </div>
+          <div class="acts">
+            <button id="act-descend" class="primary" disabled>下樓</button>
+            <button id="act-quaff" class="ghost">藥水 <b id="potion-count">2</b></button>
+            <button id="act-eat" class="ghost">乾糧 <b id="ration-count">2</b></button>
+            <button id="give-up" class="ghost quit">放棄</button>
+          </div>
+        </div>
+
+        <details class="log-box">
+          <summary>探險日誌</summary>
+          <ul id="log"></ul>
+        </details>
+      </section>
+
+      <div id="overlay" class="overlay" hidden>
+        <div class="overlay-card" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
+          <h2 id="overlay-title"></h2>
+          <p id="overlay-body"></p>
+          <ul id="overlay-stats" class="stats"></ul>
+          <div class="overlay-actions">
+            <button id="overlay-again" class="primary">再下一次深窟</button>
+            <button id="overlay-lobby" class="ghost">回到入口</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="confirm-overlay" class="overlay" hidden>
+        <div
+          class="overlay-card confirm-card"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="confirm-title"
+          aria-describedby="confirm-body"
+        >
+          <h2 id="confirm-title">放棄這趟深窟？</h2>
+          <p id="confirm-body">目前這一趟的進度會被清除，最深紀錄與最高分仍會保留。</p>
+          <div class="overlay-actions">
+            <button id="cancel-quit" class="primary">繼續探險</button>
+            <button id="confirm-quit" class="danger">確定放棄</button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
