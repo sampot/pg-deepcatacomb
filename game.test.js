@@ -1,23 +1,2 @@
-import { describe, expect, it } from "vitest";
-import { createGame, applyAction, getLegalActions, getOutcome, summarize } from "./game.js";
-
-describe("pg-deepcatacomb", () => {
-  it("creates a playable state with legal actions", () => {
-    const s = createGame({ seed: 42 });
-    expect(getOutcome(s)).toBe("playing");
-    const acts = getLegalActions(s);
-    expect(acts.length).toBeGreaterThan(0);
-    expect(summarize(s)).toBeTruthy();
-  });
-
-  it("applyAction advances without throwing", () => {
-    let s = createGame({ seed: 7 });
-    for (let i = 0; i < 12; i++) {
-      const acts = getLegalActions(s);
-      if (!acts.length) break;
-      s = applyAction(s, acts[i % acts.length]);
-      expect(s).toBeTruthy();
-    }
-    expect(["playing", "won", "lost"]).toContain(getOutcome(s));
-  });
-});
+import {describe,it,expect} from "vitest";import {createGame,applyAction,getLegalActions,getOutcome,summarize} from "./game.js";
+describe("pg-deepcatacomb",()=>{it("creates a deterministic playable game",()=>{expect(createGame({seed:7})).toEqual(createGame({seed:7}));expect(getOutcome(createGame())).toBe("playing")});it("exposes the intended decisions",()=>{expect(getLegalActions(createGame())).toEqual(["north", "east", "south", "west", "wait"])});it("applies actions immutably",()=>{const before=createGame({seed:9}),snapshot=structuredClone(before),after=applyAction(before,getLegalActions(before)[0]);expect(before).toEqual(snapshot);expect(after).not.toBe(before);expect(summarize(after)).toBeTruthy()});it("ignores unknown actions safely",()=>{const s=createGame();expect(applyAction(s,"invalid")).toEqual(s)})});

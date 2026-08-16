@@ -1,32 +1,7 @@
 export class GameAudio {
-  constructor() {
-    this.enabled = true;
-    this.started = false;
-    this.music = new Audio("./assets/audio/music.ogg");
-    this.music.loop = true;
-    this.music.volume = 0.28;
-    this.fx = {
-      click: Object.assign(new Audio("./assets/audio/click.ogg"), { volume: 0.4 }),
-      ok: Object.assign(new Audio("./assets/audio/ok.ogg"), { volume: 0.45 }),
-      hit: Object.assign(new Audio("./assets/audio/hit.ogg"), { volume: 0.5 }),
-      soft: Object.assign(new Audio("./assets/audio/soft.ogg"), { volume: 0.4 }),
-      coin: Object.assign(new Audio("./assets/audio/coin.ogg"), { volume: 0.45 }),
-    };
-  }
-  async start() {
-    this.started = true;
-    if (!this.enabled) return;
-    try { await this.music.play(); } catch {}
-  }
-  setEnabled(on) {
-    this.enabled = on;
-    if (!on) this.music.pause();
-    else if (this.started) void this.start();
-  }
-  play(name) {
-    if (!this.enabled || !this.fx[name]) return;
-    const a = this.fx[name];
-    a.currentTime = 0;
-    void a.play().catch(() => {});
-  }
+  constructor(){this.enabled=true;this.started=false;this.ctx=null;this.timer=null}
+  tone(freq,duration=.08,type="square",gain=.035){if(!this.enabled||!this.ctx)return;const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(gain,this.ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,this.ctx.currentTime+duration);o.connect(g).connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+duration)}
+  async start(){this.started=true;this.ctx??=new AudioContext();await this.ctx.resume();if(!this.timer){let i=0;this.timer=setInterval(()=>{if(this.enabled)this.tone([110,147,165,220][i++%4],.35,"sine",.018)},520)}}
+  setEnabled(on){this.enabled=on;if(on&&this.started)this.start()}
+  play(name){this.tone({click:280,ok:520,hit:90,coin:740,soft:190}[name]||320,name==="hit"?.18:.08,name==="hit"?"sawtooth":"square",.045)}
 }
